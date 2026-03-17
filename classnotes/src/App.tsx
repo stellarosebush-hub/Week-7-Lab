@@ -42,6 +42,18 @@ export default function App() {
     }
   }
 
+  const handleRenameClass = async (id: number, name: string) => {
+    const target = classes.find((c) => c.id === id)
+    if (!target) return
+    const updated = await window.api.updateClass({
+      id,
+      name,
+      color: target.color,
+      icon: target.icon
+    })
+    setClasses((prev) => prev.map((c) => (c.id === id ? updated : c)))
+  }
+
   const handleSelectClass = (id: number) => {
     setSelectedClassId(id)
     setViewNoteId(null)
@@ -62,6 +74,7 @@ export default function App() {
         selectedClassId={selectedClassId}
         onSelectClass={handleSelectClass}
         onCreateClass={handleCreateClass}
+        onRenameClass={handleRenameClass}
         onDeleteClass={handleDeleteClass}
         onNavigateToNote={handleNavigateToNote}
       />

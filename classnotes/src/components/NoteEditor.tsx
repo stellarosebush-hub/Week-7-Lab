@@ -12,7 +12,13 @@ export default function NoteEditor({ note, onUpdate, onDelete }: NoteEditorProps
   const [title, setTitle] = useState(note.title)
   const [content, setContent] = useState(note.content)
   const [saving, setSaving] = useState(false)
+  const [summaryWidth, setSummaryWidth] = useState(288)
+  const [isResizing, setIsResizing] = useState(false)
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const layoutRef = useRef<HTMLDivElement | null>(null)
+
+  const MIN_SUMMARY_WIDTH = 240
+  const MAX_SUMMARY_WIDTH = 560
 
   // Sync state when a different note is selected
   useEffect(() => {
@@ -45,6 +51,42 @@ export default function NoteEditor({ note, onUpdate, onDelete }: NoteEditorProps
     scheduleSave(title, v)
   }
 
+  useEffect(() => {
+    if (!isResizing) return
+
+    const handleMouseMove = (e: MouseEvent) => {
+      const layoutEl = layoutRef.current
+      if (!layoutEl) return
+
+      const rect = layoutEl.getBoundingClientRect()
+      // Summary is anchored on the right side of the editor layout.
+      const desiredWidth = rect.right - e.clientX
+      const maxAllowedByLayout = Math.max(MIN_SUMMARY_WIDTH, rect.width - 320)
+      const clamped = Math.min(
+        Math.max(desiredWidth, MIN_SUMMARY_WIDTH),
+        Math.min(MAX_SUMMARY_WIDTH, maxAllowedByLayout)
+      )
+
+      setSummaryWidth(clamped)
+    }
+
+    const handleMouseUp = () => {
+      setIsResizing(false)
+    }
+
+    window.addEventListener('mousemove', handleMouseMove)
+    window.addEventListener('mouseup', handleMouseUp)
+    document.body.style.userSelect = 'none'
+    document.body.style.cursor = 'col-resize'
+
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove)
+      window.removeEventListener('mouseup', handleMouseUp)
+      document.body.style.userSelect = ''
+      document.body.style.cursor = ''
+    }
+  }, [isResizing])
+
   return (
     <div className="flex flex-col h-full overflow-hidden">
       {/* Toolbar */}
@@ -60,7 +102,7 @@ export default function NoteEditor({ note, onUpdate, onDelete }: NoteEditorProps
         </button>
       </div>
 
-      <div className="flex flex-1 gap-0 overflow-hidden">
+      <div ref={layoutRef} className="flex flex-1 gap-0 overflow-hidden">
         {/* Editor area */}
         <div className="flex-1 flex flex-col overflow-y-auto px-8 py-8">
           {/* Title */}
@@ -81,8 +123,26 @@ export default function NoteEditor({ note, onUpdate, onDelete }: NoteEditorProps
           />
         </div>
 
+        {/* Drag bar for resizing summary panel */}
+        <div
+          className={`w-1.5 shrink-0 cursor-col-resize border-l border-transparent transition-colors ${
+            isResizing ? 'bg-gray-300' : 'hover:bg-gray-200'
+          }`}
+          onMouseDown={(e) => {
+            e.preventDefault()
+            setIsResizing(true)
+          }}
+          title="Drag to resize summary"
+          role="separator"
+          aria-orientation="vertical"
+          aria-label="Resize summary panel"
+        />
+
         {/* Summary sidebar */}
-        <div className="w-72 shrink-0 overflow-y-auto border-l border-gray-200 px-4 py-6">
+        <div
+          className="shrink-0 overflow-y-auto border-l border-gray-200 px-4 py-6"
+          style={{ width: `${summaryWidth}px` }}
+        >
           <SummaryPanel noteId={note.id} />
         </div>
       </div>

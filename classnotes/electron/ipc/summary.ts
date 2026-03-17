@@ -6,8 +6,10 @@ const OLLAMA_URL = 'http://127.0.0.1:11434/api/chat'
 const MODEL = 'llama3.2'
 
 const PROMPT_PREFIX =
-  'Summarize the following class notes in 3–5 concise bullet points. ' +
-  'Focus on key concepts, definitions, and takeaways.\n\n'
+  'You are summarizing class notes for studying. Read the ENTIRE note content before writing. ' +
+  'Do not only summarize the beginning; include important ideas from early, middle, and late sections. ' +
+  'Return 4-7 bullet points in this order: key concepts, definitions/formulas, examples/applications, and exam-relevant takeaways. ' +
+  'Keep bullets specific and avoid vague phrasing.\n\nNOTES:\n\n'
 
 async function fetchOllamaSummary(text: string): Promise<string> {
   let res: Response

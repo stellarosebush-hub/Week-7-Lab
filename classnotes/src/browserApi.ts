@@ -49,15 +49,103 @@ function nextId(items: Array<{ id: number }>): number {
   return items.length ? Math.max(...items.map((i) => i.id)) + 1 : 1
 }
 
-function summarizeText(text: string): string {
-  const sentences = text
+const STOP_WORDS = new Set([
+  'the', 'a', 'an', 'and', 'or', 'of', 'to', 'in', 'on', 'for', 'with', 'is', 'are',
+  'was', 'were', 'be', 'by', 'as', 'at', 'it', 'this', 'that', 'from', 'but', 'not',
+  'we', 'you', 'they', 'he', 'she', 'i', 'our', 'your', 'their', 'can', 'could', 'will',
+  'would', 'should', 'has', 'have', 'had', 'do', 'does', 'did', 'if', 'then', 'than'
+])
+
+function tokenize(text: string): string[] {
+  return text
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, ' ')
+    .split(/\s+/)
+    .map((t) => t.trim())
+    .filter((t) => t.length > 2 && !STOP_WORDS.has(t))
+}
+
+function splitSentences(text: string): string[] {
+  return text
     .replace(/\s+/g, ' ')
-    .split(/[.!?]+/)
+    .split(/(?<=[.!?])\s+/)
     .map((s) => s.trim())
-    .filter(Boolean)
-    .slice(0, 5)
-  if (sentences.length === 0) return '- No content to summarize yet.'
-  return sentences.map((s) => `- ${s}`).join('\n')
+    .filter((s) => s.length > 20)
+}
+
+function topKeywords(text: string): Set<string> {
+  const freq = new Map<string, number>()
+  for (const token of tokenize(text)) {
+    freq.set(token, (freq.get(token) ?? 0) + 1)
+  }
+  return new Set(
+    [...freq.entries()]
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 20)
+      .map(([word]) => word)
+  )
+}
+
+function summarizeText(text: string): string {
+  const normalized = text.trim()
+  if (!normalized) return '- No content to summarize yet.'
+
+  const sentences = splitSentences(normalized)
+  if (sentences.length === 0) return `- ${normalized.slice(0, 220)}`
+
+  const keywords = topKeywords(normalized)
+  const scored = sentences.map((sentence, idx) => {
+    const words = tokenize(sentence)
+    const keywordHits = words.reduce((acc, w) => acc + (keywords.has(w) ? 1 : 0), 0)
+
+    // Prefer informative sentence lengths and reward explicit concept cues.
+    const lengthScore = words.length >= 8 && words.length <= 32 ? 1.5 : 0.5
+    const cueScore = /\b(defined as|therefore|because|means|formula|example|important|key)\b/i.test(sentence)
+      ? 1.5
+      : 0
+
+    // Coverage factor: encourage picking sentences across full note (start/middle/end).
+    const position = idx / Math.max(1, sentences.length - 1)
+    const coverageBoost = position > 0.2 && position < 0.8 ? 1 : 0.7
+
+    return {
+      sentence,
+      idx,
+      score: keywordHits + lengthScore + cueScore + coverageBoost
+    }
+  })
+
+  // Pick top candidates, then force broad coverage by selecting across thirds.
+  const sorted = [...scored].sort((a, b) => b.score - a.score)
+  const top = sorted.slice(0, 12)
+  const thirds = [0, 0.33, 0.66, 1]
+  const selected: Array<{ sentence: string; idx: number }> = []
+
+  for (let t = 0; t < 3; t += 1) {
+    const start = thirds[t]
+    const end = thirds[t + 1]
+    const pick = top.find((item) => {
+      const pos = item.idx / Math.max(1, sentences.length - 1)
+      return pos >= start && pos <= end && !selected.some((s) => s.idx === item.idx)
+    })
+    if (pick) selected.push({ sentence: pick.sentence, idx: pick.idx })
+  }
+
+  for (const item of top) {
+    if (selected.length >= 5) break
+    if (!selected.some((s) => s.idx === item.idx)) {
+      selected.push({ sentence: item.sentence, idx: item.idx })
+    }
+  }
+
+  if (selected.length === 0) {
+    return sentences.slice(0, 4).map((s) => `- ${s}`).join('\n')
+  }
+
+  return selected
+    .sort((a, b) => a.idx - b.idx)
+    .map((item) => `- ${item.sentence.replace(/\s+/g, ' ').trim()}`)
+    .join('\n')
 }
 
 function buildSnippet(content: string, query: string): string {

@@ -8,6 +8,7 @@ interface SidebarProps {
   selectedClassId: number | null
   onSelectClass: (id: number) => void
   onCreateClass: () => void
+  onRenameClass: (id: number, name: string) => void
   onDeleteClass: (id: number) => void
   onNavigateToNote: (noteId: number, classId: number) => void
 }
@@ -17,6 +18,7 @@ export default function Sidebar({
   selectedClassId,
   onSelectClass,
   onCreateClass,
+  onRenameClass,
   onDeleteClass,
   onNavigateToNote
 }: SidebarProps) {
@@ -122,6 +124,19 @@ export default function Sidebar({
               style={{ backgroundColor: cls.color }}
             />
             <span className="text-sm font-medium truncate flex-1">{cls.icon} {cls.name}</span>
+            <button
+              className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-gray-700 transition-opacity text-xs px-1"
+              onClick={(e) => {
+                e.stopPropagation()
+                const nextName = prompt('Rename class', cls.name)?.trim()
+                if (nextName && nextName !== cls.name) {
+                  onRenameClass(cls.id, nextName)
+                }
+              }}
+              title="Rename class"
+            >
+              ✎
+            </button>
             <button
               className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500 transition-opacity text-xs px-1"
               onClick={(e) => { e.stopPropagation(); onDeleteClass(cls.id) }}
