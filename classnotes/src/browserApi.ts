@@ -1,10 +1,11 @@
-import type { Class, Note, SearchResult } from './types'
+import type { Class, Note, SearchResult, Task } from './types'
 
 type Summary = { summaryText: string; generatedAt: string; modelUsed: string }
 
 type BrowserDb = {
   classes: Class[]
   notes: Note[]
+  tasks: Task[]
   noteSummaries: Record<number, Summary>
   classSummaries: Record<number, Summary>
 }
@@ -21,6 +22,7 @@ function readDb(): BrowserDb {
     const seed: BrowserDb = {
       classes: [],
       notes: [],
+      tasks: [],
       noteSummaries: {},
       classSummaries: {}
     }
@@ -33,6 +35,7 @@ function readDb(): BrowserDb {
     const reset: BrowserDb = {
       classes: [],
       notes: [],
+      tasks: [],
       noteSummaries: {},
       classSummaries: {}
     }
@@ -197,6 +200,7 @@ export function ensureBrowserApi(): void {
       const db = readDb()
       db.classes = db.classes.filter((c) => c.id !== id)
       db.notes = db.notes.filter((n) => n.class_id !== id)
+      db.tasks = db.tasks.filter((t) => t.class_id !== id)
       delete db.classSummaries[id]
       for (const noteId of Object.keys(db.noteSummaries)) {
         const note = db.notes.find((n) => n.id === Number(noteId))
@@ -246,6 +250,52 @@ export function ensureBrowserApi(): void {
       const db = readDb()
       db.notes = db.notes.filter((n) => n.id !== id)
       delete db.noteSummaries[id]
+      writeDb(db)
+      return { ok: true }
+    },
+
+    async listTasks() {
+      return readDb().tasks.sort((a, b) => {
+        if (!a.due_date && !b.due_date) return b.created_at.localeCompare(a.created_at)
+        if (!a.due_date) return 1
+        if (!b.due_date) return -1
+        return a.due_date.localeCompare(b.due_date)
+      })
+    },
+    async createTask(data) {
+      const db = readDb()
+      const task: Task = {
+        id: nextId(db.tasks),
+        class_id: data.classId,
+        title: data.title,
+        due_date: data.dueDate ?? null,
+        progress: 0,
+        status: 'Not Started',
+        created_at: nowIso()
+      }
+      db.tasks.push(task)
+      writeDb(db)
+      return task
+    },
+    async updateTask(data) {
+      const db = readDb()
+      const idx = db.tasks.findIndex((t) => t.id === data.id)
+      if (idx >= 0) {
+        db.tasks[idx] = {
+          ...db.tasks[idx],
+          class_id: data.classId,
+          title: data.title,
+          due_date: data.dueDate ?? null,
+          progress: data.progress,
+          status: data.status
+        }
+      }
+      writeDb(db)
+      return db.tasks[idx]
+    },
+    async deleteTask(id) {
+      const db = readDb()
+      db.tasks = db.tasks.filter((t) => t.id !== id)
       writeDb(db)
       return { ok: true }
     },

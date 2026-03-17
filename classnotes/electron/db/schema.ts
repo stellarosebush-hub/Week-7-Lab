@@ -20,6 +20,16 @@ export function initSchema(): void {
       updated_at TEXT    DEFAULT (datetime('now'))
     );
 
+    CREATE TABLE IF NOT EXISTS tasks (
+      id         INTEGER PRIMARY KEY AUTOINCREMENT,
+      class_id   INTEGER REFERENCES classes(id) ON DELETE CASCADE,
+      title      TEXT    NOT NULL,
+      due_date   TEXT,
+      progress   INTEGER NOT NULL DEFAULT 0,
+      status     TEXT    NOT NULL DEFAULT 'Not Started',
+      created_at TEXT    DEFAULT (datetime('now'))
+    );
+
     CREATE TABLE IF NOT EXISTS summaries (
       id           INTEGER PRIMARY KEY AUTOINCREMENT,
       note_id      INTEGER REFERENCES notes(id) ON DELETE CASCADE,
@@ -66,6 +76,27 @@ export function initSchema(): void {
       INSERT INTO notes_fts(rowid, title, content)
         SELECT id, title, content FROM notes;
       PRAGMA user_version = 1;
+    `)
+  }
+
+  if (version < 2) {
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS tasks_new (
+        id         INTEGER PRIMARY KEY AUTOINCREMENT,
+        class_id   INTEGER REFERENCES classes(id) ON DELETE CASCADE,
+        title      TEXT    NOT NULL,
+        due_date   TEXT,
+        progress   INTEGER NOT NULL DEFAULT 0,
+        status     TEXT    NOT NULL DEFAULT 'Not Started',
+        created_at TEXT    DEFAULT (datetime('now'))
+      );
+
+      INSERT INTO tasks_new (id, class_id, title, due_date, progress, status, created_at)
+      SELECT id, class_id, title, due_date, progress, status, created_at FROM tasks;
+
+      DROP TABLE tasks;
+      ALTER TABLE tasks_new RENAME TO tasks;
+      PRAGMA user_version = 2;
     `)
   }
 }

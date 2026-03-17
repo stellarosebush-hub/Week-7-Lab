@@ -35,6 +35,16 @@ export interface SearchResult {
   snippet: string
 }
 
+export interface Task {
+  id: number
+  class_id: number
+  title: string
+  due_date: string | null
+  progress: number
+  status: 'Not Started' | 'In Progress' | 'Done'
+  created_at: string
+}
+
 // IPC channel response shapes
 export interface IpcError {
   code: 'OLLAMA_UNAVAILABLE' | 'MODEL_NOT_FOUND' | 'INVALID_QUERY' | 'UNKNOWN'

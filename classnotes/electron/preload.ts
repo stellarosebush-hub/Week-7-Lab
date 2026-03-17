@@ -36,5 +36,15 @@ contextBridge.exposeInMainWorld('api', {
 
   // ── Search (Feature 2) ─────────────────────────────────────────────────────
   searchNotes: (query: string, classId?: number) =>
-    ipcRenderer.invoke('notes:search', { query, classId })
+    ipcRenderer.invoke('notes:search', { query, classId }),
+
+  // ── Tasks ──────────────────────────────────────────────────────────────────
+  listTasks: () =>
+    ipcRenderer.invoke('tasks:list'),
+  createTask: (data: { classId: number; title: string; dueDate?: string | null }) =>
+    ipcRenderer.invoke('tasks:create', data),
+  updateTask: (data: { id: number; classId: number; title: string; dueDate?: string | null; progress: number; status: 'Not Started' | 'In Progress' | 'Done' }) =>
+    ipcRenderer.invoke('tasks:update', data),
+  deleteTask: (id: number) =>
+    ipcRenderer.invoke('tasks:delete', id)
 })

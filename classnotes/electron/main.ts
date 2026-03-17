@@ -4,6 +4,7 @@ import { initSchema } from './db/schema'
 import { registerNotesHandlers } from './ipc/notes'
 import { registerSummaryHandlers } from './ipc/summary'
 import { registerSearchHandlers } from './ipc/search'
+import { registerTaskHandlers } from './ipc/tasks'
 
 // Initialize database before anything else
 initSchema()
@@ -12,6 +13,7 @@ initSchema()
 registerNotesHandlers()
 registerSummaryHandlers()
 registerSearchHandlers()
+registerTaskHandlers()
 
 function createWindow(): void {
   const win = new BrowserWindow({

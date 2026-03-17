@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react'
 import type { Class } from './types'
 import Sidebar from './components/Sidebar'
 import ClassPage from './pages/ClassPage'
+import TodoPage from './pages/TodoPage'
 import WelcomePage from './pages/WelcomePage'
 
 const CLASS_COLORS = [
@@ -14,6 +15,7 @@ export default function App() {
   const [classes, setClasses] = useState<Class[]>([])
   const [selectedClassId, setSelectedClassId] = useState<number | null>(null)
   const [viewNoteId, setViewNoteId] = useState<number | null>(null)
+  const [activeView, setActiveView] = useState<'welcome' | 'class' | 'tasks'>('welcome')
 
   useEffect(() => {
     window.api.listClasses().then(setClasses)
@@ -30,6 +32,7 @@ export default function App() {
     setClasses((prev) => [...prev, cls])
     setSelectedClassId(cls.id)
     setViewNoteId(null)
+    setActiveView('class')
   }
 
   const handleDeleteClass = async (id: number) => {
@@ -39,6 +42,7 @@ export default function App() {
     if (selectedClassId === id) {
       setSelectedClassId(null)
       setViewNoteId(null)
+      setActiveView('welcome')
     }
   }
 
@@ -57,12 +61,17 @@ export default function App() {
   const handleSelectClass = (id: number) => {
     setSelectedClassId(id)
     setViewNoteId(null)
+    setActiveView('class')
   }
 
-  // Navigate to a specific note (e.g., from search results)
   const handleNavigateToNote = (noteId: number, classId: number) => {
     setSelectedClassId(classId)
     setViewNoteId(noteId)
+    setActiveView('class')
+  }
+
+  const handleSelectTasks = () => {
+    setActiveView('tasks')
   }
 
   const selectedClass = classes.find((c) => c.id === selectedClassId) ?? null
@@ -72,7 +81,9 @@ export default function App() {
       <Sidebar
         classes={classes}
         selectedClassId={selectedClassId}
+        activeView={activeView}
         onSelectClass={handleSelectClass}
+        onSelectTasks={handleSelectTasks}
         onCreateClass={handleCreateClass}
         onRenameClass={handleRenameClass}
         onDeleteClass={handleDeleteClass}
@@ -80,7 +91,9 @@ export default function App() {
       />
 
       <main className="flex-1 overflow-hidden">
-        {selectedClass ? (
+        {activeView === 'tasks' ? (
+          <TodoPage classes={classes} />
+        ) : selectedClass ? (
           <ClassPage
             key={selectedClass.id}
             cls={selectedClass}

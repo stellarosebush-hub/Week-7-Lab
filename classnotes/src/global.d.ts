@@ -1,4 +1,4 @@
-import type { Class, Note, SearchResult } from './types'
+import type { Class, Note, SearchResult, Task } from './types'
 
 interface SummaryResult {
   summaryText: string
@@ -31,6 +31,12 @@ interface ClassNotesApi {
 
   // Search
   searchNotes: (query: string, classId?: number) => Promise<SearchResult[] | ApiError>
+
+  // Tasks
+  listTasks: () => Promise<Task[]>
+  createTask: (data: { classId: number; title: string; dueDate?: string | null }) => Promise<Task>
+  updateTask: (data: { id: number; classId: number; title: string; dueDate?: string | null; progress: number; status: Task['status'] }) => Promise<Task>
+  deleteTask: (id: number) => Promise<{ ok: boolean }>
 }
 
 declare global {

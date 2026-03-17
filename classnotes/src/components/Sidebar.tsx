@@ -6,7 +6,9 @@ import SearchResults from './SearchResults'
 interface SidebarProps {
   classes: Class[]
   selectedClassId: number | null
+  activeView: 'welcome' | 'class' | 'tasks'
   onSelectClass: (id: number) => void
+  onSelectTasks: () => void
   onCreateClass: () => void
   onRenameClass: (id: number, name: string) => void
   onDeleteClass: (id: number) => void
@@ -16,7 +18,9 @@ interface SidebarProps {
 export default function Sidebar({
   classes,
   selectedClassId,
+  activeView,
   onSelectClass,
+  onSelectTasks,
   onCreateClass,
   onRenameClass,
   onDeleteClass,
@@ -90,6 +94,20 @@ export default function Sidebar({
         )}
       </div>
 
+      <div className="px-2 py-2 border-b border-gray-200">
+        <button
+          onClick={onSelectTasks}
+          className={`w-full flex items-center gap-2 px-3 py-2 rounded-md text-sm transition-colors ${
+            activeView === 'tasks'
+              ? 'bg-gray-200 text-gray-900'
+              : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+          }`}
+        >
+          <span>✅</span>
+          <span className="font-medium">To-Do List</span>
+        </button>
+      </div>
+
       {/* Classes list */}
       <nav className="flex-1 overflow-y-auto py-2">
         <div className="px-3 mb-1 flex items-center justify-between">
@@ -113,7 +131,7 @@ export default function Sidebar({
           <div
             key={cls.id}
             className={`group flex items-center gap-2 px-3 py-1.5 mx-1 rounded-md cursor-pointer transition-colors ${
-              selectedClassId === cls.id
+              activeView === 'class' && selectedClassId === cls.id
                 ? 'bg-gray-200 text-gray-900'
                 : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
             }`}
