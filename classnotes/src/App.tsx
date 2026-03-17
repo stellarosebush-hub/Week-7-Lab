@@ -68,7 +68,7 @@ export default function App() {
   const selectedClass = classes.find((c) => c.id === selectedClassId) ?? null
 
   return (
-    <div className="flex h-screen overflow-hidden bg-white">
+    <div className="flex h-screen overflow-hidden bg-sky-50">
       <Sidebar
         classes={classes}
         selectedClassId={selectedClassId}
