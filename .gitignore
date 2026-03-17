@@ -1,0 +1,26 @@
+# Dependencies
+classnotes/node_modules/
+
+# Build and packaging output
+classnotes/out/
+classnotes/dist/
+classnotes/release/
+classnotes/.vite/
+
+# TypeScript incremental build info
+classnotes/*.tsbuildinfo
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+
+# Environment variables
+.env
+.env.*
+!.env.example
+
+# OS/editor metadata
+.DS_Store
+Thumbs.db

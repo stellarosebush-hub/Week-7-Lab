@@ -1,0 +1,83 @@
+import React, { useEffect, useState } from 'react'
+import type { Class } from './types'
+import Sidebar from './components/Sidebar'
+import ClassPage from './pages/ClassPage'
+import WelcomePage from './pages/WelcomePage'
+
+const CLASS_COLORS = [
+  '#6366f1', '#0ea5e9', '#10b981', '#f59e0b',
+  '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6'
+]
+const CLASS_ICONS = ['📚', '🧪', '📐', '🌍', '💻', '🎨', '📝', '🔬']
+
+export default function App() {
+  const [classes, setClasses] = useState<Class[]>([])
+  const [selectedClassId, setSelectedClassId] = useState<number | null>(null)
+  const [viewNoteId, setViewNoteId] = useState<number | null>(null)
+
+  useEffect(() => {
+    window.api.listClasses().then(setClasses)
+  }, [])
+
+  const handleCreateClass = async () => {
+    const colorIdx = classes.length % CLASS_COLORS.length
+    const iconIdx = classes.length % CLASS_ICONS.length
+    const cls = await window.api.createClass({
+      name: `Class ${classes.length + 1}`,
+      color: CLASS_COLORS[colorIdx],
+      icon: CLASS_ICONS[iconIdx]
+    })
+    setClasses((prev) => [...prev, cls])
+    setSelectedClassId(cls.id)
+    setViewNoteId(null)
+  }
+
+  const handleDeleteClass = async (id: number) => {
+    if (!confirm('Delete this class and all its notes?')) return
+    await window.api.deleteClass(id)
+    setClasses((prev) => prev.filter((c) => c.id !== id))
+    if (selectedClassId === id) {
+      setSelectedClassId(null)
+      setViewNoteId(null)
+    }
+  }
+
+  const handleSelectClass = (id: number) => {
+    setSelectedClassId(id)
+    setViewNoteId(null)
+  }
+
+  // Navigate to a specific note (e.g., from search results)
+  const handleNavigateToNote = (noteId: number, classId: number) => {
+    setSelectedClassId(classId)
+    setViewNoteId(noteId)
+  }
+
+  const selectedClass = classes.find((c) => c.id === selectedClassId) ?? null
+
+  return (
+    <div className="flex h-screen overflow-hidden bg-white">
+      <Sidebar
+        classes={classes}
+        selectedClassId={selectedClassId}
+        onSelectClass={handleSelectClass}
+        onCreateClass={handleCreateClass}
+        onDeleteClass={handleDeleteClass}
+        onNavigateToNote={handleNavigateToNote}
+      />
+
+      <main className="flex-1 overflow-hidden">
+        {selectedClass ? (
+          <ClassPage
+            key={selectedClass.id}
+            cls={selectedClass}
+            onNavigateToNote={handleNavigateToNote}
+            initialNoteId={viewNoteId}
+          />
+        ) : (
+          <WelcomePage />
+        )}
+      </main>
+    </div>
+  )
+}
